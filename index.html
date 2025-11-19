@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Conversacional - Configuración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-center mb-6 text-indigo-600">Bot Conversacional ELIZA vs LLM</h1>
+            
+            <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                <h2 class="text-lg font-semibold text-yellow-800 mb-2">Configuración Necesaria</h2>
+                <p class="text-yellow-700">Para usar el bot moderno con LLM, necesitas una API key de Google Gemini gratuita.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">API Key de Google Gemini:</label>
+                    <input type="password" id="apiKeyInput" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                           placeholder="Ingresa tu API key aquí...">
+                    <p class="text-sm text-gray-500 mt-1">
+                        ¿No tienes una? <a href="https://makersuite.google.com/app/apikey" target="_blank" 
+                        class="text-indigo-600 hover:underline">Obtén una gratis aquí</a>
+                    </p>
+                </div>
+
+                <button onclick="saveApiKey()" 
+                        class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition">
+                    Guardar y Continuar
+                </button>
+
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-2">O prueba solo ELIZA (sin API key necesaria):</p>
+                    <a href="eliza_clasica.html" 
+                       class="inline-block bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition">
+                        ELIZA Clásica
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-semibold mb-2">¿Qué incluye esta demo?</h3>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• <strong>ELIZA Clásica</strong>: Bot original de 1966 (funciona sin API)</li>
+                    <li>• <strong>LLM Moderno</strong>: Bot con inteligencia artificial avanzada</li>
+                    <li>• <strong>Comparación</strong>: Prueba ambos lado a lado</li>
+                    <li>• <strong>Diagnósticos</strong>: Herramientas de verificación</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            
+            if (!apiKey) {
+                alert('Por favor ingresa una API key válida.');
+                return;
+            }
+
+            if (!apiKey.startsWith('AIza')) {
+                alert('La API key debe comenzar con "AIza". Verifica que sea una API key de Google válida.');
+                return;
+            }
+
+            // Guardar en localStorage
+            localStorage.setItem('gemini_api_key', apiKey);
+            
+            // Crear configuración dinámica
+            const config = {
+                GOOGLE_GEMINI_API_KEY: apiKey,
+                GEMINI_API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            };
+            
+            localStorage.setItem('api_config', JSON.stringify(config));
+            
+            alert('API key guardada exitosamente. Redirigiendo al diagnóstico...');
+            window.location.href = 'diagnostico.html';
+        }
+
+        // Verificar si ya hay una API key guardada
+        window.onload = function() {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+            }
+        }
+    </script>
+</body>
+</html>

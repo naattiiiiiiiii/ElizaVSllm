@@ -75,9 +75,42 @@
             addLog(`ERROR PROMISE: ${e.reason}`, 'error');
         });
 
-        // Configuración de API desde archivo externo
-        const apiKey = window.API_CONFIG?.GOOGLE_GEMINI_API_KEY || "TU_API_KEY_AQUI";
-        const apiUrl = `${window.API_CONFIG?.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"}?key=${apiKey}`;
+        // Configuración de API - prioridad: config.js > localStorage > placeholder
+        function getApiConfig() {
+            // Intentar desde config.js (desarrollo local)
+            if (window.API_CONFIG) {
+                return window.API_CONFIG;
+            }
+            
+            // Intentar desde localStorage (GitHub Pages)
+            const savedConfig = localStorage.getItem('api_config');
+            if (savedConfig) {
+                return JSON.parse(savedConfig);
+            }
+            
+            // Placeholder por defecto
+            return {
+                GOOGLE_GEMINI_API_KEY: "TU_API_KEY_AQUI",
+                GEMINI_API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            };
+        }
+        
+        const config = getApiConfig();
+        const apiKey = config.GOOGLE_GEMINI_API_KEY;
+        const apiUrl = `${config.GEMINI_API_URL}?key=${apiKey}`;
+        
+        // Verificar configuración de API key
+        if (apiKey === "TU_API_KEY_AQUI") {
+            document.addEventListener('DOMContentLoaded', function() {
+                const warning = document.createElement('div');
+                warning.className = 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6';
+                warning.innerHTML = `
+                    <p class="font-bold">⚠️ API Key No Configurada</p>
+                    <p>Para usar el bot moderno, <a href="index.html" class="underline">configura tu API key aquí</a></p>
+                `;
+                document.querySelector('.max-w-4xl').insertBefore(warning, document.querySelector('.max-w-4xl').firstChild);
+            });
+        }
         
         function addLog(message, type = 'info') {
             const logs = document.getElementById('system-logs');

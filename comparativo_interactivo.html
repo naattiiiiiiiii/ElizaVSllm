@@ -212,9 +212,20 @@
         // CONFIGURACIÓN GLOBAL
         // ===========================
         
-        // Configuración de API desde archivo externo
-        const apiKey = window.API_CONFIG?.GOOGLE_GEMINI_API_KEY || "TU_API_KEY_AQUI";
-        const apiUrl = `${window.API_CONFIG?.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"}?key=${apiKey}`;
+        // Configuración de API - prioridad: config.js > localStorage > placeholder
+        function getApiConfig() {
+            if (window.API_CONFIG) return window.API_CONFIG;
+            const savedConfig = localStorage.getItem('api_config');
+            if (savedConfig) return JSON.parse(savedConfig);
+            return {
+                GOOGLE_GEMINI_API_KEY: "TU_API_KEY_AQUI",
+                GEMINI_API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            };
+        }
+        
+        const config = getApiConfig();
+        const apiKey = config.GOOGLE_GEMINI_API_KEY;
+        const apiUrl = `${config.GEMINI_API_URL}?key=${apiKey}`;
         
         let elizaStats = { responses: 0, patterns: 0 };
         let modernStats = { responses: 0, context: 0 };
