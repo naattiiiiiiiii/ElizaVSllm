@@ -156,15 +156,11 @@
             document.getElementById('api-status').innerHTML = '<span class="text-yellow-600">🔄 Probando conexión...</span>';
             
             try {
+                // Payload simplificado sin generationConfig para evitar errores
                 const payload = {
                     contents: [{
-                        role: "user",
-                        parts: [{ text: "Hola, ¿puedes responder con solo 'Test exitoso'?" }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 10
-                    }
+                        parts: [{ text: "Hola, responde con solo 'Test exitoso'" }]
+                    }]
                 };
 
                 addLog('Enviando petición a Gemini API...');
@@ -185,8 +181,11 @@
 
                 const result = await response.json();
                 addLog('JSON parseado correctamente');
+                
+                // Debug: Ver estructura completa de la respuesta
+                addLog('Estructura de respuesta: ' + JSON.stringify(result, null, 2));
 
-                if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
                     const botResponse = result.candidates[0].content.parts[0].text;
                     document.getElementById('api-status').innerHTML = 
                         '<span class="text-green-600">✅ API Gemini funcionando</span>';
@@ -195,6 +194,9 @@
                     document.getElementById('api-result').classList.remove('hidden');
                     addLog('API Gemini test exitoso', 'success');
                 } else {
+                    // Debug mejorado
+                    addLog('Estructura de respuesta inesperada:', 'error');
+                    addLog('candidates: ' + JSON.stringify(result.candidates), 'error');
                     throw new Error('Estructura de respuesta inválida');
                 }
 

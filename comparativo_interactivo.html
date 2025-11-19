@@ -401,7 +401,9 @@ Responde en español, máximo 150 palabras, siempre menciona qué técnica está
 
                 const result = await response.json();
                 
-                if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+                // Verificación mejorada de la estructura
+                if (!result.candidates || !result.candidates.length || !result.candidates[0] || !result.candidates[0].content) {
+                    console.error('Estructura de respuesta:', result);
                     throw new Error('Respuesta inválida de la API');
                 }
 
