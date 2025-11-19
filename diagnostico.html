@@ -182,8 +182,24 @@
                 const result = await response.json();
                 addLog('JSON parseado correctamente');
                 
-                // Debug: Ver estructura completa de la respuesta
-                addLog('Estructura de respuesta: ' + JSON.stringify(result, null, 2));
+                // Debug completo - mostrar toda la respuesta
+                console.log('Respuesta completa de Gemini:', result);
+                addLog('=== DEBUG RESPUESTA ===');
+                addLog('Tipo de result: ' + typeof result);
+                addLog('Keys de result: ' + Object.keys(result).join(', '));
+                
+                if (result.candidates) {
+                    addLog('candidates existe, tipo: ' + typeof result.candidates);
+                    addLog('candidates length: ' + result.candidates.length);
+                    if (result.candidates.length > 0) {
+                        addLog('candidates[0] keys: ' + Object.keys(result.candidates[0]).join(', '));
+                    }
+                } else {
+                    addLog('candidates NO existe');
+                }
+                
+                addLog('Respuesta completa JSON: ' + JSON.stringify(result, null, 2));
+                addLog('=== FIN DEBUG ===');
 
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
                     const botResponse = result.candidates[0].content.parts[0].text;
@@ -201,9 +217,11 @@
                 }
 
             } catch (error) {
+                console.error('Error completo:', error);
                 addLog(`Error API Gemini: ${error.message}`, 'error');
+                addLog(`Stack trace: ${error.stack}`, 'error');
                 document.getElementById('api-status').innerHTML = 
-                    '<span class="text-red-600">❌ Error en API</span>';
+                    '<span class="text-red-600">❌ Error en API Gemini</span>';
                 document.getElementById('api-result').innerHTML = 
                     `<strong>Error:</strong> ${error.message}`;
                 document.getElementById('api-result').classList.remove('hidden');
