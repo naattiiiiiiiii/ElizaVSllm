@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico del Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">🔧 Diagnóstico del Sistema ELIZA vs LLM</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Test ELIZA Clásica -->
+            <div class="bg-white rounded-lg p-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-green-600">Test ELIZA Clásica</h2>
+                <div id="eliza-status" class="mb-4">
+                    <p class="text-gray-600">Iniciando test...</p>
+                </div>
+                <button onclick="testEliza()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Probar ELIZA
+                </button>
+                <div id="eliza-result" class="mt-4 p-3 bg-gray-100 rounded hidden"></div>
+            </div>
+
+            <!-- Test API Gemini -->
+            <div class="bg-white rounded-lg p-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-blue-600">Test API Gemini</h2>
+                <div id="api-status" class="mb-4">
+                    <p class="text-gray-600">Verificando conexión...</p>
+                </div>
+                <button onclick="testGeminiAPI()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Probar Gemini
+                </button>
+                <div id="api-result" class="mt-4 p-3 bg-gray-100 rounded hidden"></div>
+            </div>
+        </div>
+
+        <!-- Logs de Sistema -->
+        <div class="bg-white rounded-lg p-6 shadow-lg mt-6">
+            <h2 class="text-xl font-bold mb-4">📋 Logs del Sistema</h2>
+            <div id="system-logs" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
+                <div>Sistema iniciado...</div>
+            </div>
+        </div>
+
+        <!-- Enlaces de Navegación -->
+        <div class="bg-white rounded-lg p-6 shadow-lg mt-6">
+            <h2 class="text-xl font-bold mb-4">🔗 Enlaces de Navegación</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="eliza_clasica.html" class="bg-green-600 text-white p-3 rounded text-center hover:bg-green-700 transition">
+                    ELIZA Clásica
+                </a>
+                <a href="bot_entrenada.html" class="bg-blue-600 text-white p-3 rounded text-center hover:bg-blue-700 transition">
+                    Bot Moderno
+                </a>
+                <a href="comparativo_interactivo.html" class="bg-purple-600 text-white p-3 rounded text-center hover:bg-purple-700 transition">
+                    Comparativo
+                </a>
+                <a href="analisis_eliza_completo.md" class="bg-gray-600 text-white p-3 rounded text-center hover:bg-gray-700 transition">
+                    Análisis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Capturar errores JavaScript
+        window.addEventListener('error', function(e) {
+            addLog(`ERROR JS: ${e.message} en ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            addLog(`ERROR PROMISE: ${e.reason}`, 'error');
+        });
+
+        // Configuración de API desde archivo externo
+        const apiKey = window.API_CONFIG?.GOOGLE_GEMINI_API_KEY || "TU_API_KEY_AQUI";
+        const apiUrl = `${window.API_CONFIG?.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"}?key=${apiKey}`;
+        
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('system-logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logClass = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+            logs.innerHTML += `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Test ELIZA Clásica
+        function testEliza() {
+            addLog('Iniciando test ELIZA...');
+            
+            const elizaPatterns = [
+                {
+                    pattern: /\b(?:me siento|siento)\s+(.+)/i,
+                    responses: ["¿POR QUÉ SE SIENTE {0}?", "¿CUÁNDO COMENZÓ A SENTIRSE {0}?"]
+                }
+            ];
+
+            const testInput = "me siento muy ansioso";
+            const pattern = elizaPatterns[0];
+            const match = testInput.match(pattern.pattern);
+            
+            if (match) {
+                const response = pattern.responses[0].replace('{0}', match[1].toUpperCase());
+                document.getElementById('eliza-status').innerHTML = 
+                    '<span class="text-green-600">✅ ELIZA funcionando correctamente</span>';
+                document.getElementById('eliza-result').innerHTML = 
+                    `<strong>Input:</strong> ${testInput}<br><strong>Output:</strong> ${response}`;
+                document.getElementById('eliza-result').classList.remove('hidden');
+                addLog('ELIZA test exitoso', 'success');
+            } else {
+                document.getElementById('eliza-status').innerHTML = 
+                    '<span class="text-red-600">❌ Error en ELIZA</span>';
+                addLog('ELIZA test falló', 'error');
+            }
+        }
+
+        // Test API Gemini
+        async function testGeminiAPI() {
+            addLog('Iniciando test API Gemini...');
+            document.getElementById('api-status').innerHTML = '<span class="text-yellow-600">🔄 Probando conexión...</span>';
+            
+            try {
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [{ text: "Hola, ¿puedes responder con solo 'Test exitoso'?" }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        maxOutputTokens: 10
+                    }
+                };
+
+                addLog('Enviando petición a Gemini API...');
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                addLog(`Respuesta recibida: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                addLog('JSON parseado correctamente');
+
+                if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+                    const botResponse = result.candidates[0].content.parts[0].text;
+                    document.getElementById('api-status').innerHTML = 
+                        '<span class="text-green-600">✅ API Gemini funcionando</span>';
+                    document.getElementById('api-result').innerHTML = 
+                        `<strong>Test Response:</strong> ${botResponse}`;
+                    document.getElementById('api-result').classList.remove('hidden');
+                    addLog('API Gemini test exitoso', 'success');
+                } else {
+                    throw new Error('Estructura de respuesta inválida');
+                }
+
+            } catch (error) {
+                addLog(`Error API Gemini: ${error.message}`, 'error');
+                document.getElementById('api-status').innerHTML = 
+                    '<span class="text-red-600">❌ Error en API</span>';
+                document.getElementById('api-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+                document.getElementById('api-result').classList.remove('hidden');
+                
+                // Diagnóstico adicional
+                if (error.message.includes('403')) {
+                    addLog('Error 403: Verifica que la API key sea válida', 'error');
+                } else if (error.message.includes('404')) {
+                    addLog('Error 404: Verifica la URL del endpoint', 'error');
+                } else if (error.message.includes('Network')) {
+                    addLog('Error de red: Verifica tu conexión a internet', 'error');
+                }
+            }
+        }
+
+        // Auto-test inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('Sistema de diagnóstico cargado');
+            
+            // Test automático de ELIZA
+            setTimeout(() => {
+                testEliza();
+            }, 1000);
+            
+            // Test automático de API (después de 2 segundos)
+            setTimeout(() => {
+                testGeminiAPI();
+            }, 2000);
+        });
+
+        // Test de conectividad básica
+        addLog('Verificando conectividad básica...');
+        fetch('https://www.google.com', { mode: 'no-cors' })
+            .then(() => addLog('Conectividad a internet: OK', 'success'))
+            .catch(() => addLog('Conectividad a internet: FALLO', 'error'));
+    </script>
+</body>
+</html>

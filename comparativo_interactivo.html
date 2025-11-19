@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparativo: ELIZA vs LLM Moderno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <style>
+        .eliza-side {
+            background: linear-gradient(135deg, #000, #1a1a1a);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .modern-side {
+            background: linear-gradient(135deg, #f9fafb, #e5e7eb);
+            color: #1f2937;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .terminal-style {
+            border: 2px solid #00ff00;
+            background: #000;
+        }
+        
+        .modern-style {
+            border: 1px solid #d1d5db;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-dots div {
+            animation: loading 1.5s infinite;
+        }
+        .loading-dots div:nth-child(2) { animation-delay: 0.5s; }
+        .loading-dots div:nth-child(3) { animation-delay: 1s; }
+        
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        
+        .stats-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .eliza-stats {
+            background-color: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+        
+        .modern-stats {
+            background-color: rgba(79, 70, 229, 0.1);
+            color: #4f46e5;
+            border: 1px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header comparativo -->
+    <div class="bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-6">
+        <h1 class="text-3xl font-bold text-center mb-2">ELIZA vs LLM: 60 Años de Evolución</h1>
+        <p class="text-center text-gray-300 mb-4">Comparación interactiva entre tecnologías conversacionales</p>
+        
+        <!-- Estadísticas comparativas -->
+        <div class="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <div class="text-center">
+                <h3 class="font-bold text-green-400">ELIZA Clásica (1966)</h3>
+                <div class="flex justify-center space-x-4 mt-2">
+                    <span class="stats-badge eliza-stats">Respuestas: <span id="eliza-responses">0</span></span>
+                    <span class="stats-badge eliza-stats">Patrones: <span id="eliza-patterns">0</span></span>
+                    <span class="stats-badge eliza-stats">Velocidad: <1ms</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <h3 class="font-bold text-blue-400">LLM Moderno (2024)</h3>
+                <div class="flex justify-center space-x-4 mt-2">
+                    <span class="stats-badge modern-stats">Respuestas: <span id="modern-responses">0</span></span>
+                    <span class="stats-badge modern-stats">Contexto: <span id="modern-context">0</span> msgs</span>
+                    <span class="stats-badge modern-stats">Estado: <span id="api-status">🟢 Conectado</span></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mensajes de prueba rápida -->
+        <div class="text-center mt-4">
+            <p class="text-sm text-gray-300 mb-2">🚀 Pruebas Rápidas:</p>
+            <div class="flex justify-center space-x-2 flex-wrap">
+                <button onclick="sendTestMessage('Me siento muy ansioso en el trabajo')" 
+                        class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
+                    Ansiedad Laboral
+                </button>
+                <button onclick="sendTestMessage('Mi madre siempre me critica')" 
+                        class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">
+                    Problemas Familiares
+                </button>
+                <button onclick="sendTestMessage('No puedo dormir bien últimamente')" 
+                        class="px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700">
+                    Insomnio
+                </button>
+                <button onclick="sendTestMessage('Como mencioné antes, mi jefe sigue siendo problemático')" 
+                        class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">
+                    Memoria Contextual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Área principal de comparación -->
+    <div class="grid grid-cols-2 min-h-screen">
+        
+        <!-- LADO IZQUIERDO: ELIZA CLÁSICA -->
+        <div class="eliza-side p-6 border-r-2 border-gray-700">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold mb-4 text-center text-green-400">
+                    📟 ELIZA (MIT, 1966)
+                </h2>
+                
+                <div class="terminal-style rounded-lg overflow-hidden mb-4">
+                    <div class="bg-green-500 text-black px-4 py-2 text-center font-bold">
+                        DOCTOR - Pattern Matching System
+                    </div>
+                    
+                    <div id="eliza-conversation" class="p-4 h-96 overflow-y-auto">
+                        <div class="mb-3">
+                            <span class="text-green-400">DOCTOR:</span> ¿CÓMO ESTÁ USTED HOY? ¿QUÉ PROBLEMA LE TRAE AQUÍ?
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-green-500 p-3 flex items-center">
+                        <span class="text-green-400 mr-2">USER:</span>
+                        <input type="text" id="eliza-input" 
+                               class="bg-transparent text-yellow-400 flex-1 outline-none font-mono"
+                               placeholder="Escriba aquí..."
+                               onkeydown="if(event.key === 'Enter') sendToEliza()">
+                    </div>
+                </div>
+                
+                <!-- Panel de debug para ELIZA -->
+                <div class="terminal-style rounded p-3">
+                    <div class="text-green-400 text-sm">
+                        <div>Último patrón: <span id="eliza-last-pattern" class="text-yellow-400">ninguno</span></div>
+                        <div>Tipo: <span id="eliza-response-type" class="text-yellow-400">inicial</span></div>
+                        <div>Procesamiento: <span id="eliza-time" class="text-yellow-400">0ms</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LADO DERECHO: LLM MODERNO -->
+        <div class="modern-side p-6">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold mb-4 text-center text-indigo-600">
+                    LLM Moderno (Gemini 2024)
+                </h2>
+                
+                <div class="modern-style rounded-xl overflow-hidden mb-4">
+                    <div class="bg-indigo-600 text-white px-4 py-2 text-center font-bold">
+                        Terapeuta Digital - Neural Language Model
+                    </div>
+                    
+                    <div id="modern-conversation" class="p-4 h-96 overflow-y-auto bg-white">
+                        <div class="mb-3 p-3 bg-gray-100 rounded-lg">
+                            <strong>Terapeuta Digital:</strong> Hola, soy un psicólogo especializado en tecnología avanzada. Utilizo técnicas terapéuticas modernas y mantengo memoria completa de nuestra conversación. A diferencia de los bots clásicos, puedo adaptar mi enfoque a tu situación específica. ¿Qué te gustaría explorar hoy?
+                        </div>
+                    </div>
+                    
+                    <!-- Indicador de carga -->
+                    <div id="modern-loading" class="hidden p-3 bg-gray-50 border-t">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">Analizando con IA...</span>
+                            <div class="loading-dots flex space-x-1">
+                                <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t p-3 flex space-x-2">
+                        <input type="text" id="modern-input" 
+                               class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                               placeholder="Comparte tus pensamientos..."
+                               onkeydown="if(event.key === 'Enter') sendToModern()">
+                        <button onclick="sendToModern()" 
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Panel de análisis del LLM -->
+                <div class="modern-style rounded p-3">
+                    <div class="text-sm text-gray-600">
+                        <div>Contexto: <span id="modern-context-detail" class="font-semibold">0 mensajes</span></div>
+                        <div>Técnica: <span id="modern-technique" class="font-semibold">Escucha inicial</span></div>
+                        <div>Procesamiento: <span id="modern-time" class="font-semibold">0ms</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===========================
+        // CONFIGURACIÓN GLOBAL
+        // ===========================
+        
+        // Configuración de API desde archivo externo
+        const apiKey = window.API_CONFIG?.GOOGLE_GEMINI_API_KEY || "TU_API_KEY_AQUI";
+        const apiUrl = `${window.API_CONFIG?.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"}?key=${apiKey}`;
+        
+        let elizaStats = { responses: 0, patterns: 0 };
+        let modernStats = { responses: 0, context: 0 };
+        let modernChatHistory = [];
+        
+        // System instruction para Gemini
+        const systemInstruction = `Actúas como un psicólogo cognitivo especializado en terapia asistida por IA.
+
+CAPACIDADES QUE DEBES DEMOSTRAR:
+1. Memoria conversacional profunda - Recuerda y referencia toda la conversación
+2. Análisis emocional multicapa - Detecta emociones explícitas e implícitas  
+3. Técnicas terapéuticas específicas - CBT, DBT, Mindfulness, Grounding
+4. Personalización adaptativa - Ajusta tu estilo al perfil del usuario
+5. Razonamiento causal - Conecta eventos, pensamientos y emociones
+
+ESTRUCTURA DE RESPUESTA:
+- Validación empática
+- Análisis contextual profundo
+- Técnica terapéutica específica con pasos
+- Pregunta de seguimiento para profundizar
+
+Responde en español, máximo 150 palabras, siempre menciona qué técnica estás usando.`;
+
+        // ===========================
+        // IMPLEMENTACIÓN ELIZA CLÁSICA
+        // ===========================
+        
+        const elizaPatterns = [
+            {
+                pattern: /\bmadre\b|\bmama\b|\bmami\b/i,
+                responses: [
+                    "CUÉNTEME MÁS SOBRE SU MADRE.",
+                    "¿QUÉ RECUERDA DE SU MADRE?",
+                    "¿CÓMO SE LLEVA CON SU MADRE?"
+                ],
+                name: "familia_madre"
+            },
+            {
+                pattern: /\bpadre\b|\bpapa\b|\bpapi\b/i,
+                responses: [
+                    "¿SU PADRE SE PARECE A OTRAS FIGURAS EN SU VIDA?",
+                    "HÁBLEME SOBRE SU PADRE.",
+                    "¿QUÉ TIPO DE RELACIÓN TIENE CON SU PADRE?"
+                ],
+                name: "familia_padre"
+            },
+            {
+                pattern: /\b(?:me siento|siento|estoy)\s+(.+)/i,
+                responses: [
+                    "¿POR QUÉ SE SIENTE {0}?",
+                    "¿CUÁNTO TIEMPO LLEVA SINTIÉNDOSE {0}?",
+                    "¿CREE QUE ES NORMAL SENTIRSE {0}?"
+                ],
+                name: "emociones",
+                transform: true
+            },
+            {
+                pattern: /\b(?:no puedo|no logro)\s+(.+)/i,
+                responses: [
+                    "¿CÓMO SABE QUE NO PUEDE {0}?",
+                    "¿QUÉ PASARÍA SI PUDIERA {0}?",
+                    "¿QUÉ LE IMPIDE {0}?"
+                ],
+                name: "limitaciones",
+                transform: true
+            },
+            {
+                pattern: /\b(?:trabajo|jefe|oficina)\b/i,
+                responses: [
+                    "¿QUÉ ASPECTOS DE SU TRABAJO LE PREOCUPAN?",
+                    "¿CÓMO SE SIENTE EN SU TRABAJO?",
+                    "¿SU TRABAJO AFECTA OTRAS ÁREAS DE SU VIDA?"
+                ],
+                name: "trabajo"
+            },
+            {
+                pattern: /\b(?:ansioso|ansiedad|estres|nervios)\b/i,
+                responses: [
+                    "¿QUÉ SITUACIONES LE GENERAN MÁS ANSIEDAD?",
+                    "¿CUÁNDO COMENZÓ A SENTIRSE ANSIOSO?",
+                    "¿HA INTENTADO TÉCNICAS DE RELAJACIÓN?"
+                ],
+                name: "ansiedad"
+            }
+        ];
+
+        const elizaFallbacks = [
+            "ESO ES MUY INTERESANTE. CONTINÚE.",
+            "¿QUÉ LE SUGIERE ESO?",
+            "HÁBLEME MÁS SOBRE ESTO.",
+            "¿CÓMO SE SIENTE AL RESPECTO?",
+            "¿POR QUÉ CREE QUE ES IMPORTANTE?"
+        ];
+
+        function transformPronoun(text) {
+            const transformations = {
+                ' yo ': ' usted ',
+                ' me ': ' le ',
+                ' mi ': ' su ',
+                ' soy ': ' es usted ',
+                ' tengo ': ' tiene usted '
+            };
+            
+            let transformed = ' ' + text.toLowerCase() + ' ';
+            for (let [from, to] of Object.entries(transformations)) {
+                transformed = transformed.replace(new RegExp(from, 'g'), to);
+            }
+            return transformed.trim();
+        }
+
+        function processElizaInput(input) {
+            const startTime = performance.now();
+            
+            for (let pattern of elizaPatterns) {
+                const match = input.match(pattern.pattern);
+                if (match) {
+                    elizaStats.patterns++;
+                    let response = pattern.responses[Math.floor(Math.random() * pattern.responses.length)];
+                    
+                    if (pattern.transform && match[1]) {
+                        const transformed = transformPronoun(match[1]).toUpperCase();
+                        response = response.replace('{0}', transformed);
+                    }
+                    
+                    const processingTime = performance.now() - startTime;
+                    return {
+                        response: response,
+                        patternName: pattern.name,
+                        type: 'pattern_match',
+                        time: processingTime
+                    };
+                }
+            }
+            
+            const processingTime = performance.now() - startTime;
+            return {
+                response: elizaFallbacks[Math.floor(Math.random() * elizaFallbacks.length)],
+                patternName: 'fallback',
+                type: 'fallback',
+                time: processingTime
+            };
+        }
+
+        // ===========================
+        // LLM MODERNO CON GEMINI API
+        // ===========================
+        
+        async function processModernInput(input) {
+            const startTime = performance.now();
+            
+            // Agregar mensaje del usuario al historial
+            modernChatHistory.push({
+                role: "user",
+                parts: [{ text: `[Actúa como psicólogo especializado] ${input}` }]
+            });
+            
+            try {
+                const payload = {
+                    contents: modernChatHistory
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+                    throw new Error('Respuesta inválida de la API');
+                }
+
+                const botResponse = result.candidates[0].content.parts[0].text;
+                
+                // Agregar respuesta al historial
+                modernChatHistory.push({
+                    role: "model", 
+                    parts: [{ text: botResponse }]
+                });
+                
+                const processingTime = performance.now() - startTime;
+                
+                // Extraer técnica mencionada (análisis simple)
+                const techniques = ['CBT', 'DBT', 'Mindfulness', 'Grounding', 'Respiración', 'Reestructuración'];
+                const usedTechnique = techniques.find(tech => 
+                    botResponse.toLowerCase().includes(tech.toLowerCase())
+                ) || 'Escucha empática';
+
+                return {
+                    response: botResponse,
+                    technique: usedTechnique,
+                    time: processingTime,
+                    success: true
+                };
+
+            } catch (error) {
+                console.error('Error API Gemini:', error);
+                
+                const processingTime = performance.now() - startTime;
+                return {
+                    response: `Lo siento, experimenté un error técnico: ${error.message}. Por favor, verifica tu conexión a internet y que la API key esté configurada correctamente.`,
+                    technique: 'Error handling',
+                    time: processingTime,
+                    success: false
+                };
+            }
+        }
+
+        // ===========================
+        // FUNCIONES DE INTERFAZ
+        // ===========================
+        
+        function addElizaMessage(text, isUser = false, patternInfo = null) {
+            const conversation = document.getElementById('eliza-conversation');
+            const div = document.createElement('div');
+            div.className = 'mb-3';
+            
+            if (isUser) {
+                div.innerHTML = `<span class="text-yellow-400">USER:</span> ${text}`;
+            } else {
+                div.innerHTML = `<span class="text-green-400">DOCTOR:</span> ${text}`;
+                if (patternInfo) {
+                    div.innerHTML += `<br><span class="text-gray-500 text-xs">[Patrón: ${patternInfo}]</span>`;
+                }
+            }
+            
+            conversation.appendChild(div);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function addModernMessage(text, isUser = false, techniqueInfo = null) {
+            const conversation = document.getElementById('modern-conversation');
+            const div = document.createElement('div');
+            div.className = 'mb-3 p-3 rounded-lg';
+            
+            if (isUser) {
+                div.className += ' bg-indigo-100 ml-8';
+                div.innerHTML = `<strong>Usuario:</strong> ${text}`;
+            } else {
+                div.className += ' bg-gray-100';
+                div.innerHTML = `<strong>Terapeuta Digital:</strong> ${text}`;
+                if (techniqueInfo) {
+                    div.innerHTML += `<br><span class="text-indigo-600 text-xs font-semibold">[Técnica: ${techniqueInfo}]</span>`;
+                }
+            }
+            
+            conversation.appendChild(div);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        async function sendToEliza() {
+            const input = document.getElementById('eliza-input');
+            const userText = input.value.trim();
+            if (!userText) return;
+            
+            addElizaMessage(userText, true);
+            input.value = '';
+            
+            const result = processElizaInput(userText);
+            
+            setTimeout(() => {
+                addElizaMessage(result.response, false, result.patternName);
+                elizaStats.responses++;
+                updateStats();
+                
+                document.getElementById('eliza-last-pattern').textContent = result.patternName;
+                document.getElementById('eliza-response-type').textContent = result.type;
+                document.getElementById('eliza-time').textContent = `${result.time.toFixed(1)}ms`;
+            }, 50);
+        }
+
+        async function sendToModern() {
+            const input = document.getElementById('modern-input');
+            const userText = input.value.trim();
+            if (!userText) return;
+            
+            addModernMessage(userText, true);
+            input.value = '';
+            
+            // Mostrar indicador de carga
+            document.getElementById('modern-loading').classList.remove('hidden');
+            
+            const result = await processModernInput(userText);
+            
+            document.getElementById('modern-loading').classList.add('hidden');
+            addModernMessage(result.response, false, result.technique);
+            
+            modernStats.responses++;
+            modernStats.context = modernChatHistory.length;
+            updateStats();
+            
+            document.getElementById('modern-context-detail').textContent = `${modernStats.context} mensajes`;
+            document.getElementById('modern-technique').textContent = result.technique;
+            document.getElementById('modern-time').textContent = `${result.time.toFixed(0)}ms`;
+            
+            // Actualizar estado de API
+            const statusEl = document.getElementById('api-status');
+            if (result.success) {
+                statusEl.textContent = '🟢 Conectado';
+                statusEl.className = 'text-green-600';
+            } else {
+                statusEl.textContent = '🔴 Error API';
+                statusEl.className = 'text-red-600';
+            }
+        }
+
+        function sendTestMessage(message) {
+            // Enviar a ambos bots
+            document.getElementById('eliza-input').value = message;
+            document.getElementById('modern-input').value = message;
+            
+            sendToEliza();
+            setTimeout(() => sendToModern(), 100);
+        }
+
+        function updateStats() {
+            document.getElementById('eliza-responses').textContent = elizaStats.responses;
+            document.getElementById('eliza-patterns').textContent = elizaStats.patterns;
+            document.getElementById('modern-responses').textContent = modernStats.responses;
+            document.getElementById('modern-context').textContent = modernStats.context;
+        }
+
+        // Inicialización
+        document.getElementById('eliza-input').focus();
+        
+        // Test de conectividad inicial
+        setTimeout(async () => {
+            try {
+                const testResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: "test" }] }]
+                    })
+                });
+                
+                if (testResponse.ok) {
+                    document.getElementById('api-status').textContent = '🟢 Conectado';
+                    document.getElementById('api-status').className = 'text-green-600';
+                } else {
+                    throw new Error('API no disponible');
+                }
+            } catch (error) {
+                document.getElementById('api-status').textContent = '🔴 Sin conexión';
+                document.getElementById('api-status').className = 'text-red-600';
+                console.warn('API Gemini no disponible:', error);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

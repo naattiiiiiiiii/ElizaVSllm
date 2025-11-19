@@ -1,0 +1,22 @@
+# API Keys y configuración sensible
+config.js
+.env
+*.env
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Directorios del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de respaldo
+*.bak
+*.backup
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo

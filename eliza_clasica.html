@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELIZA Clásica (1966) - Reconstrucción Histórica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3a8a, #1e40af);
+            color: #00ff00;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        .terminal-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .terminal-header {
+            background: #00ff00;
+            color: #000;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .terminal-body {
+            padding: 1rem;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin: 0.5rem 0;
+            line-height: 1.4;
+        }
+        
+        .user-input {
+            color: #ffff00;
+        }
+        
+        .doctor-response {
+            color: #00ff00;
+            margin-left: 2rem;
+        }
+        
+        .input-area {
+            border-top: 1px solid #00ff00;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .prompt {
+            color: #00ff00;
+            margin-right: 0.5rem;
+        }
+        
+        #user-input {
+            background: transparent;
+            border: none;
+            color: #ffff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            flex: 1;
+            outline: none;
+        }
+        
+        .thinking {
+            color: #888;
+            font-style: italic;
+        }
+        
+        .stats-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            margin: 1rem auto;
+            max-width: 800px;
+            padding: 1rem;
+        }
+        
+        .pattern-match {
+            color: #ff6600;
+            font-size: 12px;
+            margin-left: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="terminal-header">
+            ELIZA (DOCTOR) - MIT Artificial Intelligence Laboratory (1966)
+        </div>
+        <div class="terminal-body" id="conversation">
+            <div class="message doctor-response">
+                ¿CÓMO ESTÁ USTED HOY? ¿QUÉ PROBLEMA LE TRAE AQUÍ?
+            </div>
+            <div class="message thinking">
+                [Sistema: ELIZA v1.0 - Pattern Matching Engine Iniciado]
+            </div>
+        </div>
+        <div class="input-area">
+            <span class="prompt">USUARIO:</span>
+            <input type="text" id="user-input" placeholder="Escriba su mensaje..." 
+                   onkeydown="if(event.key === 'Enter') processInput()" autofocus>
+        </div>
+    </div>
+    
+    <div class="stats-panel">
+        <h3 style="color: #00ff00; margin-top: 0;">Estadísticas de Sesión ELIZA</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; color: #ffff00;">
+            <div>Intercambios: <span id="exchanges">0</span></div>
+            <div>Patrones Detectados: <span id="patterns">0</span></div>
+            <div>Respuestas Fallback: <span id="fallbacks">0</span></div>
+        </div>
+        <div style="margin-top: 0.5rem; color: #888; font-size: 12px;">
+            Último patrón: <span id="last-pattern">Ninguno</span>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // IMPLEMENTACIÓN CLÁSICA DE ELIZA (1966)
+        // ========================================
+        
+        // Estadísticas globales
+        let sessionStats = {
+            exchanges: 0,
+            patternsDetected: 0,
+            fallbacksUsed: 0,
+            lastPattern: "Ninguno"
+        };
+
+        // Base de datos de patrones de ELIZA (fieles al original de 1966)
+        const elizaPatterns = [
+            {
+                keywords: ["madre", "mama", "mami", "mamá"],
+                patterns: [
+                    /\bmadre\b|\bmama\b|\bmami\b|\bmamá\b/i
+                ],
+                responses: [
+                    "CUÉNTEME MÁS SOBRE SU MADRE.",
+                    "¿QUÉ RECUERDA DE SU MADRE?",
+                    "¿CÓMO SE LLEVA CON SU MADRE?",
+                    "¿QUÉ SENTIMIENTOS LE DESPIERTA SU MADRE?",
+                    "¿SU MADRE SE PARECE A OTRAS FIGURAS EN SU VIDA?"
+                ],
+                priority: 9
+            },
+            {
+                keywords: ["padre", "papa", "papi", "papá"],
+                patterns: [
+                    /\bpadre\b|\bpapa\b|\bpapi\b|\bpapá\b/i
+                ],
+                responses: [
+                    "¿SU PADRE SE PARECE A OTRAS FIGURAS MASCULINAS EN SU VIDA?",
+                    "¿QUÉ TIPO DE RELACIÓN TIENE CON SU PADRE?",
+                    "HÁBLEME SOBRE SU PADRE.",
+                    "¿CÓMO INFLUYE SU PADRE EN SUS DECISIONES?",
+                    "¿QUÉ APRENDIÓ DE SU PADRE?"
+                ],
+                priority: 9
+            },
+            {
+                keywords: ["siento", "me siento", "estoy"],
+                patterns: [
+                    /\b(?:me siento|siento|estoy)\s+(.+)/i
+                ],
+                responses: [
+                    "¿POR QUÉ SE SIENTE {0}?",
+                    "¿CUÁNTO TIEMPO LLEVA SINTIÉNDOSE {0}?",
+                    "¿CREE QUE ES NORMAL SENTIRSE {0}?",
+                    "¿LE GUSTA SENTIRSE {0}?",
+                    "¿QUÉ OTRAS OCASIONES SE HA SENTIDO {0}?"
+                ],
+                priority: 8,
+                transform: true
+            },
+            {
+                keywords: ["soy", "yo soy"],
+                patterns: [
+                    /\b(?:soy|yo soy)\s+(.+)/i
+                ],
+                responses: [
+                    "¿CÓMO SE SIENTE SIENDO {0}?",
+                    "¿POR QUÉ DICE QUE ES {0}?",
+                    "¿CUÁNTO TIEMPO HA SIDO {0}?",
+                    "¿QUÉ SIGNIFICA PARA USTED SER {0}?"
+                ],
+                priority: 7,
+                transform: true
+            },
+            {
+                keywords: ["no puedo", "no logro", "no consigo"],
+                patterns: [
+                    /\b(?:no puedo|no logro|no consigo)\s+(.+)/i
+                ],
+                responses: [
+                    "¿CÓMO SABE QUE NO PUEDE {0}?",
+                    "¿HA INTENTADO {0} ANTES?",
+                    "¿QUÉ PASARÍA SI PUDIERA {0}?",
+                    "¿QUÉ LE IMPIDE {0}?"
+                ],
+                priority: 8,
+                transform: true
+            },
+            {
+                keywords: ["familia", "hermano", "hermana"],
+                patterns: [
+                    /\b(?:familia|hermano|hermana)\b/i
+                ],
+                responses: [
+                    "CUÉNTEME MÁS SOBRE SU FAMILIA.",
+                    "¿QUIÉN EN SU FAMILIA ES ESPECIALMENTE SIGNIFICATIVO PARA USTED?",
+                    "¿CÓMO SE LLEVA CON SU FAMILIA?",
+                    "¿SU FAMILIA INFLUYE EN SUS DECISIONES?"
+                ],
+                priority: 6
+            },
+            {
+                keywords: ["trabajo", "jefe", "oficina", "empleo"],
+                patterns: [
+                    /\b(?:trabajo|jefe|oficina|empleo)\b/i
+                ],
+                responses: [
+                    "¿QUÉ ASPECTOS DE SU TRABAJO LE PREOCUPAN?",
+                    "¿CÓMO SE SIENTE EN SU TRABAJO?",
+                    "¿SU TRABAJO AFECTA OTRAS ÁREAS DE SU VIDA?",
+                    "HÁBLEME SOBRE SU SITUACIÓN LABORAL."
+                ],
+                priority: 5
+            },
+            {
+                keywords: ["amor", "amar", "quiero", "amo"],
+                patterns: [
+                    /\b(?:amor|amar|quiero|amo)\b/i
+                ],
+                responses: [
+                    "¿QUÉ SIGNIFICA EL AMOR PARA USTED?",
+                    "¿CÓMO EXPRESA SUS SENTIMIENTOS?",
+                    "¿HA HABLADO SOBRE ESTO CON LA PERSONA INVOLUCRADA?",
+                    "EL AMOR ES COMPLEJO. CUÉNTEME MÁS."
+                ],
+                priority: 6
+            },
+            {
+                keywords: ["miedo", "temor", "terror", "pánico"],
+                patterns: [
+                    /\b(?:miedo|temor|terror|pánico)\b/i
+                ],
+                responses: [
+                    "¿QUÉ LE CAUSA ESE MIEDO?",
+                    "¿CUÁNDO COMENZÓ A SENTIR ESE TEMOR?",
+                    "¿ESE MIEDO LE IMPIDE HACER COSAS?",
+                    "MUCHAS PERSONAS TIENEN MIEDOS SIMILARES."
+                ],
+                priority: 7
+            },
+            {
+                keywords: ["problema", "problemas"],
+                patterns: [
+                    /\b(?:problema|problemas)\b/i
+                ],
+                responses: [
+                    "¿QUÉ TIPO DE PROBLEMA ES?",
+                    "¿CÓMO SUELE RESOLVER SUS PROBLEMAS?",
+                    "¿ESTE PROBLEMA LE RECUERDA A OTROS ANTERIORES?",
+                    "HÁBLEME MÁS SOBRE ESE PROBLEMA."
+                ],
+                priority: 5
+            },
+            {
+                keywords: ["siempre", "nunca"],
+                patterns: [
+                    /\b(?:siempre|nunca)\b/i
+                ],
+                responses: [
+                    "¿REALMENTE SIEMPRE?",
+                    "¿PUEDE PENSAR EN ALGUNA EXCEPCIÓN?",
+                    "¿CUÁNDO NO FUE ASÍ?",
+                    "LAS PALABRAS 'SIEMPRE' Y 'NUNCA' SON ABSOLUTAS."
+                ],
+                priority: 4
+            }
+        ];
+
+        // Respuestas de fallback (cuando no se detecta ningún patrón específico)
+        const fallbackResponses = [
+            "ESO ES MUY INTERESANTE. CONTINÚE.",
+            "¿QUÉ LE SUGIERE ESO?",
+            "ENTIENDO. HÁBLEME MÁS SOBRE ESTO.",
+            "¿CÓMO SE SIENTE AL RESPECTO?",
+            "¿POR QUÉ CREE QUE ES IMPORTANTE?",
+            "¿QUÉ OTROS PENSAMIENTOS TIENE?",
+            "¿PUEDE DARME MÁS DETALLES?",
+            "ESO SUENA SIGNIFICATIVO PARA USTED.",
+            "¿QUÉ VIENE A SU MENTE CUANDO PIENSA EN ESO?",
+            "CUÉNTEME MÁS."
+        ];
+
+        // Transformaciones de pronombres (característica clave de ELIZA)
+        function transformPronoun(text) {
+            const transformations = {
+                ' yo ': ' usted ',
+                ' me ': ' le ',
+                ' mi ': ' su ',
+                ' mis ': ' sus ',
+                ' mío ': ' suyo ',
+                ' mía ': ' suya ',
+                ' soy ': ' es usted ',
+                ' tengo ': ' tiene usted ',
+                ' estoy ': ' está usted ',
+                ' puedo ': ' puede usted ',
+                ' debo ': ' debe usted ',
+                ' quiero ': ' quiere usted ',
+                ' hago ': ' hace usted ',
+                ' pienso ': ' piensa usted ',
+                ' creo ': ' cree usted '
+            };
+            
+            let transformed = ' ' + text.toLowerCase() + ' ';
+            for (let [from, to] of Object.entries(transformations)) {
+                transformed = transformed.replace(new RegExp(from, 'g'), to);
+            }
+            return transformed.trim();
+        }
+
+        // Motor de procesamiento principal de ELIZA
+        function processElizaInput(userInput) {
+            const input = userInput.toLowerCase();
+            
+            // Ordenar patrones por prioridad
+            const sortedPatterns = elizaPatterns.sort((a, b) => b.priority - a.priority);
+            
+            // Buscar coincidencia de patrones
+            for (let patternGroup of sortedPatterns) {
+                for (let pattern of patternGroup.patterns) {
+                    const match = input.match(pattern);
+                    if (match) {
+                        sessionStats.patternsDetected++;
+                        sessionStats.lastPattern = patternGroup.keywords.join(', ');
+                        
+                        // Seleccionar respuesta aleatoria del grupo
+                        const responses = patternGroup.responses;
+                        const selectedResponse = responses[Math.floor(Math.random() * responses.length)];
+                        
+                        // Aplicar transformación si es necesario
+                        if (patternGroup.transform && match[1]) {
+                            const transformed = transformPronoun(match[1]);
+                            return {
+                                response: selectedResponse.replace('{0}', transformed.toUpperCase()),
+                                pattern: patternGroup.keywords[0],
+                                type: 'pattern_match'
+                            };
+                        }
+                        
+                        return {
+                            response: selectedResponse,
+                            pattern: patternGroup.keywords[0],
+                            type: 'pattern_match'
+                        };
+                    }
+                }
+            }
+            
+            // Si no se encuentra patrón, usar respuesta fallback
+            sessionStats.fallbacksUsed++;
+            sessionStats.lastPattern = "fallback";
+            const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+            
+            return {
+                response: fallbackResponse,
+                pattern: 'fallback',
+                type: 'fallback'
+            };
+        }
+
+        // Función para agregar mensajes a la conversación
+        function addMessage(text, type, pattern = null) {
+            const conversation = document.getElementById('conversation');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            conversation.appendChild(messageDiv);
+            
+            // Mostrar información del patrón detectado (para fines educativos)
+            if (pattern && pattern !== 'fallback') {
+                const patternDiv = document.createElement('div');
+                patternDiv.className = 'pattern-match';
+                patternDiv.textContent = `[Patrón detectado: ${pattern}]`;
+                conversation.appendChild(patternDiv);
+            }
+            
+            // Scroll automático
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        // Actualizar estadísticas en pantalla
+        function updateStats() {
+            document.getElementById('exchanges').textContent = sessionStats.exchanges;
+            document.getElementById('patterns').textContent = sessionStats.patternsDetected;
+            document.getElementById('fallbacks').textContent = sessionStats.fallbacksUsed;
+            document.getElementById('last-pattern').textContent = sessionStats.lastPattern;
+        }
+
+        // Procesar entrada del usuario
+        function processInput() {
+            const inputField = document.getElementById('user-input');
+            const userText = inputField.value.trim();
+            
+            if (userText === '') return;
+            
+            // Mostrar mensaje del usuario
+            addMessage(userText, 'user-input');
+            
+            // Limpiar campo de entrada
+            inputField.value = '';
+            
+            // Simular tiempo de "pensamiento" de ELIZA
+            setTimeout(() => {
+                const result = processElizaInput(userText);
+                addMessage(result.response, 'doctor-response', result.pattern);
+                
+                sessionStats.exchanges++;
+                updateStats();
+            }, 500);  // Delay para simular procesamiento
+        }
+
+        // Comandos especiales para demostración
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'r') {
+                // Ctrl+R: Reiniciar conversación
+                event.preventDefault();
+                document.getElementById('conversation').innerHTML = `
+                    <div class="message doctor-response">
+                        ¿CÓMO ESTÁ USTED HOY? ¿QUÉ PROBLEMA LE TRAE AQUÍ?
+                    </div>
+                    <div class="message thinking">
+                        [Sistema: ELIZA v1.0 - Sesión Reiniciada]
+                    </div>
+                `;
+                sessionStats = {
+                    exchanges: 0,
+                    patternsDetected: 0,
+                    fallbacksUsed: 0,
+                    lastPattern: "Ninguno"
+                };
+                updateStats();
+            }
+        });
+
+        // Mensajes de demostración para testing rápido
+        const demoMessages = [
+            "Me siento muy triste últimamente",
+            "Mi madre siempre me critica",
+            "No puedo dormir bien",
+            "Soy una persona muy ansiosa",
+            "Tengo problemas en el trabajo",
+            "Mi padre nunca me entendió"
+        ];
+
+        // Función para demostración automática (opcional)
+        function runDemo() {
+            let messageIndex = 0;
+            const demoInterval = setInterval(() => {
+                if (messageIndex >= demoMessages.length) {
+                    clearInterval(demoInterval);
+                    return;
+                }
+                
+                document.getElementById('user-input').value = demoMessages[messageIndex];
+                processInput();
+                messageIndex++;
+            }, 3000);
+        }
+
+        // Inicialización
+        document.getElementById('user-input').focus();
+        updateStats();
+        
+        // Agregar información sobre comandos
+        setTimeout(() => {
+            addMessage("[Presione Ctrl+R para reiniciar la sesión]", "thinking");
+        }, 1000);
+    </script>
+</body>
+</html>
